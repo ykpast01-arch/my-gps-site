@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPS位置情報表示</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 20px; }
+        button { padding: 10px 20px; font-size: 16px; margin-bottom: 20px; }
+        .result { font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>GPS位置情報の取得</h1>
+    <button id="get-location">現在地を取得する</button>
+
+    <div class="result">
+        <p>緯度: <span id="latitude">---</span></p>
+        <p>経度: <span id="longitude">---</span></p>
+        <p id="status"></p>
+    </div>
+
+    <script>
+        document.getElementById('get-location').addEventListener('click', () => {
+            const status = document.getElementById('status');
+            const latText = document.getElementById('latitude');
+            const lngText = document.getElementById('longitude');
+
+            // 1. ブラウザがGeolocation APIに対応しているか確認
+            if (!navigator.geolocation) {
+                status.textContent = 'お使いのブラウザはGPSに対応していません。';
+                return;
+            }
+
+            status.textContent = '位置情報を取得中...';
+
+            // 高精度な位置情報を取得するためのオプション設定
+            const options = {
+                enableHighAccuracy: true, // GPSなどの高精度なソースを強制する
+                timeout: 10000,           // 10秒でタイムアウト
+                maximumAge: 0             // キャッシュされた位置情報は使わない
+            };
+
+            // 2. 位置情報の取得を実行
+            navigator.geolocation.getCurrentPosition(
+                // 成功時のコールバック
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+
+                    latText.textContent = lat;
+                    lngText.textContent = lng;
+                    status.textContent = '取得成功！';
+                },
+                // 失敗時のコールバック
+                (error) => {
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            status.textContent = '位置情報の利用が許可されませんでした。';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            status.textContent = '位置情報が利用できません（電波状況など）。';
+                            break;
+                        case error.TIMEOUT:
+                            status.textContent = 'タイムアウトしました。';
+                            break;
+                        default:
+                            status.textContent = 'エラーが発生しました: ' + error.message;
+                            break;
+                    }
+                },
+                options
+            );
+        });
+    </script>
+</body>
+</html>
