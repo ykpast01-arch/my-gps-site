@@ -3,17 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPS位置情報表示</title>
+    <title>GPS位置情報表示 & マップ連携</title>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; }
-        button { padding: 10px 20px; font-size: 16px; margin-bottom: 20px; }
-        .result { font-weight: bold; margin-top: 10px; }
+        button { padding: 12px 24px; font-size: 16px; margin-bottom: 20px; cursor: pointer; }
+        .result { font-weight: bold; margin-top: 10px; line-height: 1.6; }
+        /* 地図を表示する枠のスタイル */
+        #map-container {
+            margin-top: 20px;
+            width: 100%;
+            height: 400px; /* 地図の高さ */
+            border: none;
+            display: none; /* 最初は非表示にしておく */
+        }
     </style>
 </head>
 <body>
 
-    <h1>GPS位置情報の取得</h1>
-    <button id="get-location">現在地を取得する</button>
+    <h1>GPS位置情報の取得とマップ表示</h1>
+    <button id="get-location">現在地を取得してマップを表示</button>
 
     <div class="result">
         <p>緯度: <span id="latitude">---</span></p>
@@ -21,13 +29,15 @@
         <p id="status"></p>
     </div>
 
+    <iframe id="map-container"></iframe>
+
     <script>
         document.getElementById('get-location').addEventListener('click', () => {
             const status = document.getElementById('status');
             const latText = document.getElementById('latitude');
             const lngText = document.getElementById('longitude');
+            const mapContainer = document.getElementById('map-container');
 
-            // 1. ブラウザがGeolocation APIに対応しているか確認
             if (!navigator.geolocation) {
                 status.textContent = 'お使いのブラウザはGPSに対応していません。';
                 return;
@@ -35,38 +45,43 @@
 
             status.textContent = '位置情報を取得中...';
 
-            // 高精度な位置情報を取得するためのオプション設定
             const options = {
-                enableHighAccuracy: true, // GPSなどの高精度なソースを強制する
-                timeout: 10000,           // 10秒でタイムアウト
-                maximumAge: 0             // キャッシュされた位置情報は使わない
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
             };
 
-            // 2. 位置情報の取得を実行
             navigator.geolocation.getCurrentPosition(
-                // 成功時のコールバック
                 (position) => {
                     const lat = position.coords.latitude;
                     const lng = position.coords.longitude;
 
                     latText.textContent = lat;
                     lngText.textContent = lng;
-                    status.textContent = '取得成功！';
+                    status.textContent = '取得成功！地図を表示します。';
+
+                    // 【ここがポイント！】Googleマップの埋め込み用URLを作成
+                    // 緯度と経度をURLに組み込んで、ブラウザ用の地図を生成します
+                    const mapUrl = `https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`;
+                    
+                    // iframeの読み込み先をGoogleマップのURLに設定
+                    mapContainer.src = mapUrl;
+                    // 地図の枠を表示する
+                    mapContainer.style.display = 'block';
                 },
-                // 失敗時のコールバック
                 (error) => {
                     switch (error.code) {
                         case error.PERMISSION_DENIED:
                             status.textContent = '位置情報の利用が許可されませんでした。';
                             break;
                         case error.POSITION_UNAVAILABLE:
-                            status.textContent = '位置情報が利用できません（電波状況など）。';
+                            status.textContent = '位置情報が利用できません。';
                             break;
                         case error.TIMEOUT:
                             status.textContent = 'タイムアウトしました。';
                             break;
                         default:
-                            status.textContent = 'エラーが発生しました: ' + error.message;
+                            status.textContent = 'エラー: ' + error.message;
                             break;
                     }
                 },
