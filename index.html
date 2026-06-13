@@ -3,32 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GPS位置情報表示 & マップ連携</title>
+    <title>GPS位置情報表示 & 徒歩ルート案内</title>
     <style>
         body { font-family: sans-serif; text-align: center; padding: 20px; }
-        button { padding: 12px 24px; font-size: 16px; margin-bottom: 20px; cursor: pointer; }
+        button { padding: 12px 24px; font-size: 16px; margin-bottom: 20px; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px; }
+        button:hover { background-color: #0056b3; }
         .result { font-weight: bold; margin-top: 10px; line-height: 1.6; }
-        /* 地図を表示する枠のスタイル */
         #map-container {
             margin-top: 20px;
             width: 100%;
-            height: 400px; /* 地図の高さ */
+            height: 450px; /* ルートが見やすいように少し高くしました */
             border: none;
-            display: none; /* 最初は非表示にしておく */
+            display: none;
         }
     </style>
 </head>
 <body>
 
-    <h1>GPS位置情報の取得とマップ表示</h1>
-    <button id="get-location">現在地を取得してマップを表示</button>
+    <h1>目的地への徒歩ルート案内</h1>
+    <button id="get-location">現在地から目的地への徒歩ルートを表示</button>
 
     <div class="result">
-        <p>緯度: <span id="latitude">---</span></p>
-        <p>経度: <span id="longitude">---</span></p>
+        <p>あなたの現在地 緯度: <span id="latitude">---</span> / 経度: <span id="longitude">---</span></p>
         <p id="status"></p>
     </div>
 
+    <!-- Googleマップを表示するためのインラインフレーム -->
     <iframe id="map-container"></iframe>
 
     <script>
@@ -58,15 +58,18 @@
 
                     latText.textContent = lat;
                     lngText.textContent = lng;
-                    status.textContent = '取得成功！地図を表示します。';
+                    status.textContent = '取得成功！徒歩ルートを計算して表示します。';
 
-                    // 【ここがポイント！】Googleマップの埋め込み用URLを作成
-                    // 緯度と経度をURLに組み込んで、ブラウザ用の地図を生成します
-                    const mapUrl = `https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`;
+                    // 【ここが最大のポイント！】
+                    // 目的地：東京都荒川区東尾久七丁目2番35号
+                    const destination = "東京都荒川区東尾久七丁目2番35号";
                     
-                    // iframeの読み込み先をGoogleマップのURLに設定
+                    // Googleマップに「出発地(saddr)」「目的地(daddr)」「移動手段(dirflg=wで徒歩)」を伝えるURLを作成
+                    // ※日本語の住所は自動的に安全な形（エンコード）に変換されます
+                    const mapUrl = `https://maps.google.com/maps?saddr=${lat},${lng}&daddr=${encodeURIComponent(destination)}&dirflg=w&output=embed`;
+                    
+                    // 地図を表示
                     mapContainer.src = mapUrl;
-                    // 地図の枠を表示する
                     mapContainer.style.display = 'block';
                 },
                 (error) => {
